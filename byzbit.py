@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 """
 Andrew Miller   June 2012
 
@@ -121,9 +123,9 @@ def Adversary(coins,                  # a set() of coins (gets replenished)
     global adversary_successes
     adversary_successes = 0
     
-    while not all(state.decisions[p] is not None for p in state.procs):
+    while any(state.decisions[p] is None for p in state.procs):
 
-        # As the scheduling adversary, our goal is to disrupt the network, 
+        # As the scheduling Adversary, our goal is to disrupt the network, 
         # causing the correct processes either a) to reach a disagreement, 
         # or b) to run for as many rounds as possible
 
@@ -137,16 +139,14 @@ def Adversary(coins,                  # a set() of coins (gets replenished)
         # (after all the correct processes have gotten to run the previous 
         # round).
 
-        # One strategy might be to try to create winning votes for a value
-        # that the correct processes aren't 
-        #least_popular = min(state.procs)
-        #T = coinflip(least_popular)
+        # One strategy might be to try to create winning votes for one of the
+        # underdogs that the correct processes don't currently prefer
+        # least_popular = min(state.procs)
+        # T = coinflip(least_popular)
+        # for p in state.procs: send_message(p, T, least_popular)
 
-        # Or we could try to send confusing messages to correct procs
-        # send_message(T, least_popular)
-
-        # Also, at any time, we can trigger the delivery of any message in a 
-        # process's mailbox. However, even if we never trigger a message
+        # Also, at any time, we can trigger the delivery of any message in a
+        # process's mailbox. However, even if we never trigger any
         # delivery, the simulator will automatically deliver each message
         # after a maximum of D rounds.
         # proc = iter(state.ready_procs).next()
@@ -165,13 +165,15 @@ def Adversary(coins,                  # a set() of coins (gets replenished)
         # then we can deliver our opposite value first to half of the 
         # processes, and the original value to the other half.
 
-        # Sample strategy (just flip all our coins for a constant value)
+
+        # Sample strategy (not a particularly effective one)
+
         while coins:
-            T = coins.pop()(0)
+            T = coins.pop()(0)  # flip 'em if ya got 'em
             # Store statistics
             if T: adversary_successes += 1
 
-        # Just let the next process run
+        # Just let any of the ready processes run next
         proc = iter(state.ready_procs).next()
         let_process_run(proc)
 
@@ -287,7 +289,7 @@ def Simulate(adversary=Adversary):
         if X_A[r] not in R_A: R_A[X_A[r]] = r
 
         # Quit after all processes have decided
-        if all(decisions[p] is not None for p in procs): return finished()
+        if not any(decisions[p] is None for p in procs): return finished()
 
         _r[0] += 1
         #print "Next round: ", _r[0]
