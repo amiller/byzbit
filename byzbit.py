@@ -1,7 +1,7 @@
 """
 Andrew Miller   June 2012
 
-A simulation of Bitcoin [?] as a distributed Byzantine consensus algorithm.
+A simulation of Bitcoin [฿] as a distributed Byzantine consensus algorithm.
 
 
 In a distributed consensus algorithm, a network of N processes tries to come to
@@ -93,6 +93,10 @@ relative to the number of correct processes.
 [4] Randomized Protocols for Asynchronous Consensus
     James Aspnes
     http://arxiv.org/pdf/cs.DS/0209014.pdf
+
+[฿] Bitcoin: A Peer-to-Peer Electronic Cash System
+    Satoshi Nakamoto
+    http://bitcoin.org/bitcoin.pdf
 
 """
 from collections import defaultdict
