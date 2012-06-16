@@ -7,11 +7,10 @@ A simulation of Bitcoin [?] as a distributed Byzantine consensus algorithm.
 In a distributed consensus algorithm, a network of N processes tries to come to
 a unanimous agreement about some value. Each process ultimately has to 'decide'
 on a particular value, which becomes its final answer / its output value. For
-a protocol to solve the consensus problem, the following conditions must be 
-satisfied:
+a protocol to solve the consensus problem, the following conditions must met:
 
-    (Agreement) If any process decides on value v', then no process decides
-         on a distinct value v'.
+    (Agreement) If any process decides on a value v, then no process decides 
+         decide on any distinct value v'.
 
     (Termination) All processes eventually decide.
 
@@ -66,6 +65,15 @@ model:
         relation N >= 2f+1. In any given time interval, the Adversary can 
         perform no more coin flips than a fraction (1 - 1/f) of the number
         flipped by the correct processes, in total.
+
+
+The protocol we model is a simplified form of Bitcoin. It based on observing a 
+majority vote. Since the processes are anonymous, you'd think that any voting
+mechanism would be susceptible to some form of Sybil attack [?]. However, 
+our mechanism for voting involves computing a pricing function [?], and by
+assumption the faulty processes cannot afford to vote more often than (1-1/f)
+relative to the number of correct processes.
+
 
 
 [1] Consensus in the Presence of Partial Synchrony
@@ -165,9 +173,9 @@ def Adversary(coins,                  # a set() of coins (gets replenished)
 
 class Process(object):
     def __init__(self, proposed):
-        self.r = 0                            # Round number
-        self.V = defaultdict(lambda: set())   # The ballot box of votes
-        self.V[proposed]                      # Initially pick this ballot
+        self.r = 0                            # Keep a round counter
+        self.V = defaultdict(lambda: set())   # Store all the votes we receive
+        self.V[proposed]                      # Initially prefer our input
         self.r_hat = r_hat                    # Decide after round r_hat
 
     def receive(self, T, v):
