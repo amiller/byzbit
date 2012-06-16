@@ -111,7 +111,7 @@ N = 9         # Total number of processes
 f = 4         # Maximum number of faulty processes
 D = 400       # Maximum message delay
 r_hat = 2000
-assert N >= 2*f + 1
+assert N >= 2*f + 1   # This is equivalent to Bitcoin's '51%' condition [฿]
 
 
 def Adversary(coins,                  # a set() of coins (gets replenished)
