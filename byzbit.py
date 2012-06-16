@@ -34,13 +34,14 @@ model:
         faulty processes. However, in one variation of our model, the total 
         network size is an unknown parameter [?].
 
-    a) anonymous processes
+    c) anonymous processes
         Processes are not associated with any unique identifiers [?].
 
-    b) randomization and non-determinism
-        Each process is able to perform randomized coin flips [?].
+    d) randomization and non-determinism
+        Each process is able to perform randomized coin flips [?]. The 
+        Adversary can not know the outcome of future coin flips ahead of time.
 
-    b) synchronous (and partially synchronous) communications
+    e) synchronous (and partially synchronous) communications
         Processes communicate by sending broadcast messages. All messages are
         eventually delivered after D rounds, and no messages are lost. When a
         process receives a message, it has know way of knowing where the message
@@ -48,7 +49,7 @@ model:
         parameter that the protocol can depend on. In b) the partially 
         synchronous model, D exists but the protocol may not depend on it [1].
 
-    d) collision-resistant hash functions, and randomization
+    f) collision-resistant hash functions, and randomization
         We can use collision-resistant hash functions to construct the coinflip
         primitive modeled here (see make_mint()). This is a typical kind of 
         assumption in popular cryptographic systems, although it is not known
@@ -57,7 +58,7 @@ model:
         implemented using hash functions [?]. However, the processes have no
         identifiers and thus no public keys.
 
-    e) processor synchrony
+    g) processor synchrony
         We assume that the processes are given fair access to the coinflip
         primitive. This implies that all processes run at the same speeds,
         i.e., no process gets ahead or falls behind. Another way to look at it
