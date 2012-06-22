@@ -11,13 +11,17 @@ a unanimous agreement about some value. Each process ultimately has to 'decide'
 on a particular value, which becomes its final answer / its output value. For
 a protocol to solve the consensus problem, the following conditions must met:
 
-    (Agreement) If any process decides on a value v, then no process decides 
-         decide on any distinct value v'.
+    (Agreement) No two processes decides on distinct values v and v'.
 
-    (Termination) All processes eventually decide.
+    (Termination) All processes eventually decide after a finite amount of time.
 
     (Weak Validity) If there are no faulty processes, then each process decides
-         on a value that was given to them as an input.
+         on the value that was given to them as an input. *
+
+
+* This effectively prevents hardcoding the decision value into the protocol. A
+slightly stronger formulation would be to have the faulty processes have no more
+than polynomial chance of deciding the outcome.
 
 
 What makes this problem difficult is that we have to cope with two kinds of
@@ -28,44 +32,42 @@ control to an explicit Adversary. Here are the key features of our computation
 model:
 
     a) byzantine faults
-        The Adversary is given full control over the f faulty processes, i.e.,
+        The Adversary is given full control over f faulty processes, i.e.,
         'pawns'.
-
-    b) unknown network size (optional)
-        We allow the protocol is allowed to depend on f, the maximum number of 
-        faulty processes. However, in one variation of our model, the total 
-        network size is an unknown parameter [?].
 
     c) anonymous processes
         Processes are not associated with any unique identifiers [?].
 
     d) randomization and non-determinism
-        Each process is able to perform randomized coin flips [?]. The 
-        Adversary can not know the outcome of future coin flips ahead of time.
+        Each process is able to perform randomized coin flips [?]. The
+        Adversary cannot learn the outcome of future coin flips ahead of time.
 
-    e) synchronous (and partially synchronous) communications
-        Processes communicate by sending broadcast messages. All messages are
-        eventually delivered after D rounds, and no messages are lost. When a
-        process receives a message, it has know way of knowing where the message
-        came from. In a) the synchronous model, the maximum delay D is a known 
-        parameter that the protocol can depend on. In b) the partially 
-        synchronous model, D exists but the protocol may not depend on it [1].
+    e) synchronous communications
+        Processes communicate by broadcasting messages. All messages are
+        eventually delivered after a delay of D rounds, and no messages are 
+        lost. When a process receives a message, it has no way of knowing 
+        where the message came from. 
 
-    f) collision-resistant hash functions, and randomization
+        If a protocol does not depend on D, then the protocol also runs in the
+        'partially synchronous' communications model [1].
+
+    f) collision-resistant hash functions
         We can use collision-resistant hash functions to construct the coinflip
-        primitive modeled here (see make_mint()). This is a typical kind of 
-        assumption in popular cryptographic systems, although it is not known
-        to be achievable in the standard model [?]. This model is at least as
-        strong as one that supports digital signatures, since those can be
-        implemented using hash functions [?]. However, the processes have no
-        identifiers and thus no public keys.
+        primitive modeled here (see make_mint()). Collision resistant hash
+        functions are a popular cryptographic primitive, although it is not known
+        to be achievable in the standard model [?].
+
+        This computation model is at least as strong as one that supports digital 
+        signatures, signatures can be implemented using hash functions [?].
+        However, the processes in our network model have no identifiers and thus 
+        no public keys.
 
     g) processor synchrony
         We assume that the processes are given fair access to the coinflip
         primitive. This implies that all processes run at the same speeds,
         i.e., no process gets ahead or falls behind. Another way to look at it
         is that the difference between total process speeds is included in the
-        relation N >= 2f+1. In any given time interval, the Adversary can 
+        relation N >= 2f+1. In any given time interval, the Adversary can
         perform no more coin flips than a fraction (1 - 1/f) of the number
         flipped by the correct processes, in total.
 
@@ -75,8 +77,19 @@ majority vote. Since the processes are anonymous, you'd think that any voting
 mechanism would be susceptible to some form of Sybil attack [?]. However, 
 our mechanism for voting involves computing a pricing function [?], and by
 assumption the faulty processes cannot afford to vote more often than (1-1/f)
-relative to the number of correct processes.
+times relative to the number of votes from the correct processes.
 
+For sufficiently small values of p (so that successful coinflips only occur
+infrequently), the messages propagate faster than new successes are found.
+
+For known parameters, N, D, and f, an optimal* choice for p is:
+
+[TODO] this is broken
+          1    ⎛      f   ⎞
+   p =  ─────  ⎜1 - ───── ⎟
+        2⋅Δ⋅N  ⎝    N - f ⎠
+
+[TODO] finish the proof sketch here?
 
 
 [1] Consensus in the Presence of Partial Synchrony
@@ -106,11 +119,11 @@ import operator
 import random
 
 # Parameters
-p = 0.01      # Probability of successful coinflip
-N = 9         # Total number of processes
-f = 4         # Maximum number of faulty processes
-D = 400       # Maximum message delay
-r_hat = 2000
+p = 0.16      # Probability of successful coinflip
+N = 3         # Total number of processes
+f = 1         # Maximum number of faulty processes
+D = 2         # Maximum message delay
+r_hat = 5000
 assert N >= 2*f + 1   # This is equivalent to Bitcoin's '51%' condition [฿]
 
 
@@ -220,7 +233,7 @@ def Simulate(adversary=Adversary):
     adversary_coins = set(make_coin() for _ in range(f))
 
     # Some stats collection
-    global R_C, R_A
+    global R_C, R_A, X_C, X_A
     R_C = defaultdict(None)
     R_A = defaultdict(None)
     X_C = defaultdict(None)
@@ -285,8 +298,12 @@ def Simulate(adversary=Adversary):
         for p in procs: 
             for v in p.V.values(): total.update(v)
         X_A[r] = adversary_successes + len(total)
-        if X_C[r] not in R_C: R_C[X_C[r]] = r
-        if X_A[r] not in R_A: R_A[X_A[r]] = r
+        for i in range(X_C[r], -1, -1):
+            if i in R_C: break
+            R_C[i] = r
+        for i in range(X_A[r], -1, -1):
+            if i in R_A: break
+            R_A[i] = r
 
         # Quit after all processes have decided
         if not any(decisions[p] is None for p in procs): return finished()
@@ -345,9 +362,24 @@ make_coin, valid = make_mint(p)
 def once():
     # Run the simulator, make some graphs
     Simulate()
-    x = np.arange(max(R_C.keys()))
-    plot(x, map(R_C.get, x), 'b')
-    plot(x, map(R_A.get, x*2), 'r')
+
+    figure(1)
+    x = np.arange(max(R_C.keys()))+1
+    ra = np.array(map(R_A.get, x*2))
+    plot(x, map(R_C.get, x)/x.astype('f'), 'b')
+    rax = x[ra.astype('bool')].astype('f')
+    plot(rax, ra[np.array(map(bool,ra))] / rax, 'r')
     title('R^C_x (blue) vs R^A_2x (red)')
     xlabel('x (number of votes)')
     ylabel('r (rounds taken to find x votes)')
+
+
+    x = np.arange(max(R_C.keys()))
+    xc = np.array(map(X_C.get, x))
+    xa = np.array(map(X_A.get, x))
+    figure(2)
+    plot(xc, 'b')
+    plot(xa/2, 'r')
+    title('X_C (blue) vs X_A/2 (red) p=%.2f' % p)
+    xlabel('r (rounds)')
+    ylabel('x (number of successes)')
