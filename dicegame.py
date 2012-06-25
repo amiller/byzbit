@@ -1,14 +1,33 @@
 import random
-import scipy.linalg
+
+"""
+Andrew Miller  June 2012
+
+In this dice game, a Player and the House roll dice in rounds. They
+are both trying to collect 1's (successes). During each round, a total 
+of N dice are rolled. In a normal round, the Player rolls (N-f) dice
+while the House rolls (f) dice. If at any time the Player rolls a 1, then 
+D penalty rounds begin. During a penalty round, the House gets to roll
+all of the dice.
+
+My goal is to obtain:
+
+  a) an expression for r, a number of rounds to play for, so that 
+     after r rounds the Player wins except for a negligible probability
+
+  b) a choice of p, the probability of success on single dice roll,
+     so that r is minimized
+
+"""
 
 # Fixed environmental parameters
-N = 3
-f = 1
-D = 2
+N = 3   # Total number of dice rolled in each round
+f = 1   # Number of dice rolled by the House in a normal round
+D = 2   # Number of penalty rounds that begin when Player rolls a 1
 assert N >= 2*f + 1
 
 # Protocol parameters
-p = 1/24.
+p = 1/24.   # Probability of success on a dice roll
 
 
 class DiceGame():
@@ -19,27 +38,31 @@ class DiceGame():
 
     def roll(self, hand):
         assert hand in ('player','house')
-
         if random.random() <= p:  # Pr[success] = p
-
-            if hand == 'player' and not self.penalty:
+            if hand == 'player': 
                 self.player += 1
                 self.penalty = D
             else:
                 self.house += 1
 
     def round(self):
-        # Player gets to roll (N-f) dice
+        # Player gets to roll (N-f) dice, 
         for _ in range(N-f):
-            self.roll('player')
+            if not self.penalty: self.roll('player')
+            else: self.roll('house')
 
         for _ in range(f):
             self.roll('house')
 
-        self.penalty = max(0, self.penalty - 1)
+        if self.penalty: self.penalty -= 1
 
 
-def make_P():
+
+"""
+Some attempts at analysis begin here
+"""
+
+def make_transition_kernel():
     S = D
 
     global P
@@ -65,7 +88,7 @@ class MarkovChain():
 
         state = 0
 
-
+import scipy.linalg
 
 def simulate(rounds):
     game = DiceGame()
@@ -87,7 +110,7 @@ def simulate(rounds):
 def player_bound(k, r):
     r = float(r)
     A = 1 + 1./((N-f)*D*p)
-    #B = -sqrt(k/(2*p))
+     #B = -sqrt(k/(2*p))
     B = -sqrt(2*k)
     C = -r/D
     sqrt_mu = (-B + sqrt(B**2 - 4*A*C)) / (2*A)
@@ -99,18 +122,18 @@ def house_bound(k, r):
     # Return a threshold x such that Pr(X_A[r] >= x) < exp(-k)
 
     #Chernoff's bound, multiplicative form
-    mu = N*r*p
+    #mu = N*r*p
     #b = sqrt(2*k/mu)
     #return (1+b) * mu / 2
-    return (mu + sqrt(2*mu*k))/2
+    #return (mu + sqrt(2*mu*k))/2
 
     # Chernoff's bound, additive form
     # (Additive form is a much weaker bound! Use multiplicative!)
     #within_eps = lambda a, b: np.abs(a-b) < 1e-5
     #assert within_eps((N*r*p + np.sqrt(N*r*k/2))/2, (p + e) * N * r)
-    #e = sqrt(float(k)/(2*N*r))/2
+    e = sqrt(float(k)/(2*N*r))/2
     #return (p + e) * N * r
-    #return (N*r*p + np.sqrt(N*r*k/2))/2
+    return (N*r*p + np.sqrt(N*r*k/2))/2
 
 
 def simulate_player(rounds):
