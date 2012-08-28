@@ -2,6 +2,8 @@
 Andrew Miller <amiller@cs.ucf.edu> <amiller@dappervision.com>
 
 An illustration of how Bitcoin measures time according to cumulative work.
+Experiment described in this post:
+https://bitcointalk.org/index.php?topic=98986.msg1109747#msg1109747
 
 Dependencies:
      BitcoinTools: https://github.com/gavinandresen/bitcointools
